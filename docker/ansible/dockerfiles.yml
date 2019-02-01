@@ -1,0 +1,48 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Load defaults
+      include_vars: vars/default.yml
+      tags: always
+
+    - name: Create safe directory structure
+      file:
+        path: "{{ base_dir }}/{{ item.0.name }}/{{ item.1.name }}/safe"
+        state: directory
+      loop: "{{ query('subelements', platforms, 'versions')  }}"
+      tags: safe
+
+    - name: Create unsafe directory structure
+      file:
+        path: "{{ base_dir }}/{{ item.0.name }}/{{ item.1.name }}/unsafe"
+        state: directory
+      loop: "{{ query('subelements', platforms, 'versions')  }}"
+      tags: unsafe
+
+
+    - name: Debug names
+      debug:
+        msg: "Creating dockerfile for {{ item.0.name }} version {{ item.1.name }}"
+      loop: "{{ query('subelements', platforms, 'versions')  }}"
+
+    - name: Generate SAFE dockerfiles
+      template:
+        src: Dockerfile.j2
+        dest: "{{ base_dir }}/{{ item.0.name }}/{{ item.1.name }}/safe/Dockerfile"
+      loop: "{{ query('subelements', platforms, 'versions')  }}"
+      vars:
+        distribution: "{{ item.0 }}"
+        release: "{{ item.1 }}"
+        type: safe
+      tags: safe
+
+    - name: Generate UNSAFE dockerfiles
+      template:
+        src: Dockerfile.j2
+        dest: "{{ base_dir }}/{{ item.0.name }}/{{ item.1.name }}/unsafe/Dockerfile"
+      loop: "{{ query('subelements', platforms, 'versions')  }}"
+      vars:
+        distribution: "{{ item.0 }}"
+        release: "{{ item.1 }}"
+        type: unsafe
+      tags: unsafe

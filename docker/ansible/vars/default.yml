@@ -1,0 +1,150 @@
+---
+# common parameters
+
+# root directory for docker structure
+base_dir: "{{ playbook_dir }}/../"
+# prefix for docker images
+package_prefix: qsslcaudit-1
+
+# build macros
+
+fail_build: 'echo "I will fail"; exit 1'
+default_build_command: RUN tools/install.sh
+default_install_commands: 
+  - COPY --from=stage1 /usr/local/bin/qsslcaudit /usr/local/bin/
+  - COPY --from=stage1 /opt /opt
+
+default_centos_commands:
+  pre_build_commands:
+    - |
+      RUN yum -y update && \
+      yum -y install epel-release && \
+      yum -y install make cmake qt5-qtbase-devel gnutls-devel openssl openssl-libs openssl-devel gcc gcc-c++
+  build_commands:
+    - "{{ default_build_command }}"
+  post_build_commands:
+    - RUN echo post build
+  install_dep_commands:
+    - RUN yum -y install openssl openssl-libs qt5-qtbase
+
+default_fedora_commands:
+  pre_build_commands:
+    - |
+      RUN dnf -y update && \
+      dnf -y install make cmake qt5-qtbase-devel gnutls-devel openssl openssl-libs openssl-devel gcc gcc-c++
+  build_commands:
+    - "{{ default_build_command }}"
+  post_build_commands:
+    - RUN echo post build
+  install_dep_commands:
+    - RUN yum -y install openssl openssl-libs qt5-qtbase  
+
+default_debian_commands:
+  pre_build_commands:
+    - RUN apt-get update && apt-get -y install make cmake qt5-default g++ libgnutls28-dev libssl-dev
+  build_commands:
+    - "{{ default_build_command }}"
+  post_build_commands:
+    - RUN echo post build
+
+default_ubuntu_commands:
+  pre_build_commands:
+    - RUN apt-get update && apt-get -y install make cmake qtbase5-dev g++ libgnutls-dev libssl-dev
+  build_commands:
+    - "{{ default_build_command }}"
+  post_build_commands:
+    - RUN echo post build
+
+default_alt_commands:
+  pre_build_commands:
+    - RUN apt-get update && apt-get -y install make cmake qt5-base-devel gcc-c++ libgnutls-devel libssl-devel
+  build_commands:
+    - "{{ default_build_command }}"
+  post_build_commands:
+    - RUN echo post build
+
+distributions:
+  - name: ubuntu-trusty
+platforms:
+  - name: centos
+    base_repo: centos
+    versions:
+      # - name: 5
+      #   commands: "{{ default_centos_commands }}"
+      - name: 6
+        commands: "{{ default_centos_commands }}"
+      - name: 7
+        commands: "{{ default_centos_commands }}"
+  - name: fedora
+    base_repo: fedora
+    versions:
+      - name: 28
+        commands: "{{ default_fedora_commands }}"
+      - name: 29
+        commands: "{{ default_fedora_commands }}"
+      - name: 30
+        commands: "{{ default_fedora_commands }}"
+  - name: ubuntu
+    base_repo: ubuntu
+    versions:
+      - name: lucid
+        commands: "{{ default_ubuntu_commands }}"
+      - name: precise
+        commands: "{{ default_ubuntu_commands }}"
+      - name: trusty
+        commands: "{{ default_ubuntu_commands }}"
+      - name: xenial
+        commands: "{{ default_ubuntu_commands }}"
+      - name: bionic
+        commands:
+            pre_build_commands:
+              - RUN apt-get update && apt-get -y install make cmake qtbase5-dev g++ libgnutls28-dev libssl-dev
+            build_commands:
+              - "{{ default_build_command }}"
+            post_build_commands:
+              - RUN echo post build
+  - name: debian
+    base_repo: debian
+    versions:
+      # - name: squeeze
+      #   commands: "{{ default_debian_commands }}"
+      - name: wheezy
+        commands:
+
+          pre_build_commands:
+            - RUN echo 'deb http://http.debian.net/debian wheezy-backports main' > /etc/apt/sources.list.d/wheezy-backports.list
+            - RUN apt-get update && apt-get -y install make cmake qt5-default g++ libgnutls-dev libssl-dev
+          build_commands:
+            - "{{ default_build_command }}"
+          post_build_commands:
+            - RUN echo post build
+      - name: stretch
+        commands: "{{ default_debian_commands }}"
+  - name: mint
+    base_repo: vcatechnology/linux-mint
+    versions:
+      - name: 18
+        commands: "{{ default_ubuntu_commands }}"
+      - name: 17
+        commands: "{{ default_ubuntu_commands }}"
+  - name: kalilinux
+    base_repo: kalilinux/kali-linux-docker
+    versions:
+      - name: latest
+        commands: "{{ default_debian_commands }}"
+  - name: alt
+    base_repo: alt
+    versions:
+      - name: sisyphus
+        commands: "{{ default_alt_commands }}"
+      # - name: p8
+      #   commands: "{{ default_alt_commands }}"
+  # - name: opensuse
+  #   base_repo: opensuse
+  #   versions:
+  #     - name: tumbleweed
+  #       commands: "{{ default_centos_commands }}"
+  #     - name: leap
+  #       commands: "{{ default_centos_commands }}"
+  #     - name: harlequin
+  #       commands: "{{ default_centos_commands }}"

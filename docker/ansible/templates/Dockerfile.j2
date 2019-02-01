@@ -1,0 +1,36 @@
+{% set image_name = distribution.name + "-" + release.name|string %}
+# 
+# Docker environment for QSSLCAUDIT testing
+# Uses standard OpenSSL libraries
+#
+# Prepare image: docker build -t {{ image_name }} -f path/to/Dockerfile .
+# Run instance:  docker run --name {{ image_name }} --rm -it {{ image_name }}
+#
+
+FROM {{ distribution.base_repo }}:{{ release.name }} as stage1
+# prebuild stage
+{% for command in release.commands.pre_build_commands %}
+{{ command }}
+{% endfor %}
+# add files
+ADD . /qsslcaudit
+WORKDIR /qsslcaudit
+# build stage
+{% for command in release.commands.build_commands %}
+{{ command }}
+{% endfor %}
+# postbuild stage
+{% for command in release.commands.post_build_commands %}
+{{ command }}
+{% endfor %}
+
+FROM {{ distribution.base_repo }}:{{ release.name }}
+WORKDIR /root/
+{% if release.commands.install_commands is defined %}
+{% for command in release.commands.install_commands %}
+{{ command }}
+{% endfor %}
+{% endif %}
+
+
+CMD ["/bin/true"]  
